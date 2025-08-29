@@ -1,0 +1,38 @@
+---
+{{- if eq .Release.Namespace "dcv" -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cron-classsync-configmap
+data:
+  url: {{ printf "https://%s/sync.php" .Values.hostname }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cron-class-sync
+spec:
+  schedule: "* */6 * * *" # Run every 4 hours
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: cron-class-sync
+              image: buildpack-deps:curl
+              imagePullPolicy: IfNotPresent
+              command: [ "/bin/sh" ]
+              args: [ "-c", "curl -X POST -d 'token=$(TOKEN)' $(URL)" ]
+              env:
+              - name: TOKEN
+                valueFrom:
+                  secretKeyRef:
+                    name: {{ .Values.wutil.dataConnectionSecretName }}
+                    key: SISCLASSSYNC
+              - name: URL
+                valueFrom:
+                  configMapKeyRef:
+                    name: cron-classsync-configmap
+                    key: url
+          restartPolicy: OnFailure
+{{- end -}}

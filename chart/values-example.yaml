@@ -1,0 +1,132 @@
+---
+# Default values for chart.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+# image:
+  # repository: nginx
+  # pullPolicy: Always
+  # Overrides the image tag whose default is the chart appVersion.
+  # tag: ""
+
+# the Kubernetes secret where you have the credentials for your git repository where the built images are stored
+imagePullSecrets: [name: registrypullsecret] # Secret name for your registry image pull secret
+nameOverride: "dcv-tool"
+fullnameOverride: "dcv-tool"
+# fully qualified host name for the ingresses
+hostname: "example.com"
+# the full url to the built git image of the wutil deployment
+wutil:
+  image: "image url goes here"  # url to the fully built image of the wutil deployment
+  samlSettingsSecretName: "saml-settings"  # Kubernetes secret name for saml configuration settings
+  databaseSecretName: "sample-dcv-database-secrets"  # Kubernetes secret name for PostgreSQL DCV database settings
+  webCTRLDatabaseSecretName: "sample-dcv-webctrl-database-secrets"  # Kubernetes secret name for PostgreSQL WebCTRL database
+  dataConnectionSecretName: "sample-dcv-dataconnection-secrets" # Kubernetes secret name for data connection secrets
+  dcvBackupSecretName: "sample-dcv-backup-secrets" # Kubernetes secret name for the backup script to use
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is
+  # generated using the fullname template
+  name: ""
+
+# podAnnotations: {}
+
+# podSecurityContext: {}
+  # fsGroup: 2000
+
+# securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+# What port should the service run on?
+service:
+  type: NodePort
+  port: 80
+
+# configuration details for the ingress
+ingress:
+  secretName: dcvtool-cert
+  enabled: true  #change to true
+  className: ""
+  annotations:
+    clusterIssuer: "letsencrypt-prod" #Kubernetes Cluster Certificate Issuer
+    clawsreg: "true"
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: hostname.example.com       # full host name for the DCV Installation
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+      tls: []
+    - secretName: example-dcvtool-cert         # ! # Kubernetes secret name that holds the cert
+      hosts:
+        - hostname.example.com    # full host name for the DCV Installation
+
+resources: {}
+  # We usually recommend not to specify default resources
+  # and to leave this as a conscious
+  # choice for the user. This also increases chances charts
+  # run on environments with little
+  # resources, such as Minikube. If you do want to specify
+  # resources, uncomment the following
+  # lines, adjust them as necessary, and remove the
+  # curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+# initialDelaySeconds: 15
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+timescaledb-single:
+  enabled: false
+timescaledb:
+  enabled: false
+
+rbac:
+  create: false
+
+# Information for the Grafana Reporting instance
+grafana:
+  grafanaSecretsName: "example-grafana-secrets"  # Kubernetes secret name that holds the grafana secrets
+  grafanaDatabaseName: "grafana"                # Database name for grafana db
+  persistence:
+    enabled: true
+    existingClaim: dcv-grafana-pvc
+    # PV claim name
+  service:
+    name: reporting-grafana
+    # Existing service name
+
+# Configures the WebCTRL agent that takes the data in the setpoint_write table and sends it to WebCTRL
+webctrlAgent:
+  webCTRLAgentConfigYamlSecretName: "dcv-webctrl-config" # Kubernetes secret name for DCV WebCTRL Configuration yaml
+  name: dcv-webctrl-agent
+  image: "imageserver.example.com/image:latest"  # Full url to the built image for the WebCTRL Utility

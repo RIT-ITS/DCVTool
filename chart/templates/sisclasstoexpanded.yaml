@@ -1,0 +1,38 @@
+---
+{{- if eq .Release.Namespace "dcv" -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cron-classtoexpanded-configmap
+data:
+  url: {{ printf "https://%s/sync.php" .Values.hostname }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cron-classtoexpanded-sync
+spec:
+  schedule: "*/30 * * * *" # Run every 30 min
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: cron-classtoexpanded-sync
+              image: buildpack-deps:curl
+              imagePullPolicy: IfNotPresent
+              command: [ "/bin/sh" ]
+              args: [ "-c", "curl -X POST -d 'token=$(TOKEN)' $(URL)" ]
+              env:
+              - name: TOKEN
+                valueFrom:
+                  secretKeyRef:
+                    name: {{ .Values.wutil.dataConnectionSecretName }}
+                    key: SISCLASSTOEXPANDED
+              - name: URL
+                valueFrom:
+                  configMapKeyRef:
+                    name: cron-classtoexpanded-configmap
+                    key: url
+          restartPolicy: OnFailure
+{{- end -}}

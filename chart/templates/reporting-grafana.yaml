@@ -1,0 +1,155 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ if eq .Release.Namespace "dcv" }}grafana-pvc{{ else }}{{ .Release.Namespace }}-grafana-pvc{{ end }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: reporting-grafana
+  name: reporting-grafana
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: reporting-grafana
+  template:
+    metadata:
+      labels:
+        app: reporting-grafana
+    spec:
+      securityContext:
+        fsGroup: 472
+        supplementalGroups:
+          - 0
+      containers:
+        - name: reporting-grafana
+          image: grafana/grafana:9.5.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+              name: http-grafana
+              protocol: TCP
+          # readinessProbe:
+          #  failureThreshold: 3
+          #  httpGet:
+          #    path: /robots.txt
+          #    port: 3000
+          #    scheme: HTTP
+          #  initialDelaySeconds: 10
+          #  periodSeconds: 30
+          #  successThreshold: 1
+          #  timeoutSeconds: 2
+          # livenessProbe:
+          #  failureThreshold: 3
+          #  initialDelaySeconds: 30
+          #  periodSeconds: 10
+          #  successThreshold: 1
+          #  tcpSocket:
+          #    port: 3000
+          #  timeoutSeconds: 1
+          volumeMounts:
+            - name: {{ if eq .Release.Namespace "dcv" }}grafana-pv{{ else }}{{ .Release.Namespace }}-grafana-pv{{ end }}
+              mountPath: /var/lib/grafana
+            - name: grafana-config-volume
+              mountPath: /etc/grafana/grafana.ini
+              subPath: grafana.ini
+          env:
+            - name: GF_SECURITY_ADMIN_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.grafana.grafanaSecretsName }}
+                  key: graf-user
+            - name: GF_SECURITY_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.grafana.grafanaSecretsName }}
+                  key: graf-pw
+            - name: GF_SERVER_ROOT_URL
+              value: https://{{ .Values.hostname }}/reporting
+            - name: GF_DATABASE_TYPE
+              value: postgres
+            - name: GF_DATABASE_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.grafana.grafanaSecretsName }}
+                  key: DB_HOST
+            - name: GF_DATABASE_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.grafana.grafanaSecretsName }}
+                  key: DB_USER
+            - name: GF_DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.grafana.grafanaSecretsName }}
+                  key: DB_PASSWORD
+            - name: GF_DATABASE_NAME
+              value: {{ .Values.grafana.grafanaDatabaseName }}
+            - name: GF_DATABASE_SSL_MODE
+              value: "require"
+      volumes:
+        - name: {{ if eq .Release.Namespace "dcv" }}grafana-pv{{ else }}{{ .Release.Namespace }}-grafana-pv{{ end }}
+          persistentVolumeClaim:
+            claimName: {{ if eq .Release.Namespace "dcv" }}grafana-pvc{{ else }}{{ .Release.Namespace }}-grafana-pvc{{ end }}
+        - name: grafana-config-volume
+          configMap:
+            name: grafana-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  # same name referenced in values.yaml
+  name: reporting-grafana-svc
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: http-grafana
+      protocol: TCP
+      name: http
+  selector:
+    app: reporting-grafana
+---
+{{- if .Values.ingress.enabled -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    cert-manager.io/cluster-issuer: {{ .Values.ingress.annotations.clusterIssuer }}
+    clawsreg: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+  labels:
+    app.kubernetes.io/component: webserver
+    app.kubernetes.io/managed-by: helm
+    app.kubernetes.io/name: dcvtool-reporting
+    app.kubernetes.io/operator-version: 1.0.0
+    app.kubernetes.io/part-of: dcv-tool
+  name: grafana-nginx-ingress
+spec:
+  rules:
+    - host: {{ .Values.hostname }}
+      http:
+        paths:
+          - backend:
+              service:
+                name: reporting-grafana-svc
+                port:
+                  number: 80
+            path: /reporting(/|$)(.*)
+            pathType: Prefix
+  tls:
+    - hosts:
+        - {{ .Values.hostname }}
+      secretName: {{ .Values.ingress.secretName }}
+{{- end -}}
+

@@ -1,0 +1,111 @@
+{{- if eq .Release.Namespace "dcv" -}}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backup-script
+data:
+  backup.sh: |
+    #!/bin/bash
+    while true; do
+      pg_dump -v -h $POSTGRES_HOST -U $POSTGRES_USER -d $POSTGRES_DB -f /opt/backups/backup_$(date +'%Y%m%d-%H%M%S').sql;
+      find /opt/backups -name 'backup_*.sql' -mtime +7 -exec rm {} \;
+      sleep 21600;
+    done;
+---
+#Create a 5GB PVC (can adjust size)
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: timescaledb-backup-pvc
+  labels:
+    app: timescaledb-backup
+    tier: backend
+    environment: prod
+    app.kubernetes.io/component: backup
+    app.kubernetes.io/managed-by: helm
+    app.kubernetes.io/part-of: dcvtool
+spec:
+  storageClassName: vsphere-sc
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 350Gi
+---
+#Create deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: timescaledb-backup
+  labels:
+    app: timescaledb-backup
+    tier: backend
+    environment: prod
+    app.kubernetes.io/component: backup
+    app.kubernetes.io/managed-by: helm
+    app.kubernetes.io/part-of: dcvtool
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: timescaledb-backup
+  template:
+    metadata:
+      labels:
+        app: timescaledb-backup
+    spec:
+      affinity: {}
+      containers:
+        - name: backup
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: postgres:14.6
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: POSTGRES_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.wutil.databaseSecretName }}
+                  key: DB_HOST
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.wutil.dcvBackupSecretName }}
+                  key: POSTGRES_USER
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.wutil.dcvBackupSecretName }}
+                  key: DB_NAME
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.wutil.dcvBackupSecretName }}
+                  key: POSTGRES_PW
+          command: [ "/bin/bash", "-c" ]
+          args: [ "bash /scripts/backup.sh" ]
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+            - mountPath: /opt/backups/
+              name: timescaledb-backup-pvc
+            - name: backup-script-volume
+              mountPath: /scripts
+              readOnly: true
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+        - name: timescaledb-backup-pvc
+          persistentVolumeClaim:
+            claimName: timescaledb-backup-pvc
+        - name: backup-script-volume
+          configMap:
+            name: backup-script
+{{- end -}}

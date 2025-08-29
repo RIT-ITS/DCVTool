@@ -1,0 +1,196 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wutil
+  labels:
+    tier: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wutil
+      tier: backend
+  template:
+    metadata:
+      labels:
+        app: wutil
+        tier: backend
+    spec:
+      imagePullSecrets:
+        {{- toYaml .Values.imagePullSecrets | nindent 8 }}
+      containers:
+        - name: wutil-php
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: {{ .Values.wutil.image }}
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+          env:
+            - name: SAML_SETTINGS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.wutil.samlSettingsSecretName }}
+                  key: settings
+            - name: DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.wutil.databaseSecretName }}
+                  key: DB_HOST
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.wutil.databaseSecretName }}
+                  key: DB_NAME
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.wutil.databaseSecretName }}
+                  key: DB_USER
+            - name: DB_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.wutil.databaseSecretName }}
+                  key: DB_PASS
+            - name: WCT_DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.wutil.webCTRLDatabaseSecretName }}
+                  key: WCT_DB_HOST
+            - name: WCT_DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.wutil.webCTRLDatabaseSecretName }}
+                  key: WCT_DB_NAME
+            - name: WCT_DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.wutil.webCTRLDatabaseSecretName }}
+                  key: WCT_DB_USER
+            - name: WCT_DB_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.wutil.webCTRLDatabaseSecretName }}
+                  key: WCT_DB_PASS
+            - name: SISCLASSSYNC
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.wutil.dataConnectionSecretName }}
+                  key: SISCLASSSYNC
+            - name: SISEXAMSYNC
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.wutil.dataConnectionSecretName }}
+                  key: SISEXAMSYNC
+            - name: SETPOINTSYNC
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.wutil.dataConnectionSecretName }}
+                  key: SETPOINTSYNC
+            - name: SISCLASSTOEXPANDED
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.wutil.dataConnectionSecretName }}
+                  key: SISCLASSTOEXPANDED
+            - name: TRENDSYNC
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.wutil.dataConnectionSecretName }}
+                  key: TRENDSYNC
+            - name: CORS_ALLOWED_ORIGIN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.wutil.dataConnectionSecretName }}
+                  key: CORS_ALLOWED_ORIGIN
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: shared-files
+              mountPath: /var/www/html
+            - name: wutil-config-volume
+              mountPath: /etc/apache2/sites-enabled/000-default.conf
+              subPath: 000-default.conf
+          # Important! After this container has started, the PHP files
+          # in our Docker image aren't in the shared volume. We need to
+          # get them into the shared volume. If we tried to write directly
+          # to this volume from our Docker image the files wouldn't appear
+          # in the nginx container.
+          #
+          # So, after the container has started, copy the PHP files from this
+          # container's local filesystem (/app -- added via the Docker image)
+          # to the shared volume, which is mounted at /var/www/html.
+          lifecycle:
+            postStart:
+              exec:
+                command: ["/bin/sh", "-c", "cp -r /httpdapp/. /var/www/html"]
+          command: ["/usr/local/bin/start-apache.sh"]
+      volumes:
+        # Create the shared files volume to be used in both pods
+        - name: shared-files
+          emptyDir: {}
+        # Add the ConfigMap we declared above as a volume for the pod
+        - name: wutil-config-volume
+          configMap:
+            name: wutil-config
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wutil-httpd-svc
+  labels:
+    tier: backend
+spec:
+  selector:
+    app: wutil
+    tier: backend
+  ports:
+    - protocol: TCP
+      port: 80
+  #externalIPs:
+  # - your_public_ip
+---
+{{- if .Values.ingress.enabled -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    cert-manager.io/cluster-issuer: {{ .Values.ingress.annotations.clusterIssuer }}
+    clawsreg: "true"
+    # nginx.ingress.kubernetes.io/rewrite-target: /$2
+  labels:
+    app.kubernetes.io/component: webserver
+    app.kubernetes.io/managed-by: helm
+    app.kubernetes.io/name: dcvtool-wutil
+    app.kubernetes.io/operator-version: 1.0.0
+    app.kubernetes.io/part-of: dcv-tool
+  name: wutil-whttpd-ingress
+spec:
+  rules:
+    - host: {{ .Values.hostname | quote }}
+      http:
+        paths:
+          - path: /
+            backend:
+              service:
+                name: wutil-httpd-svc
+                port:
+                  number: 80
+            pathType: Prefix
+  tls:
+    - hosts:
+        - {{ .Values.hostname | quote }}
+      secretName: {{ .Values.ingress.secretName }}
+{{- end -}}
