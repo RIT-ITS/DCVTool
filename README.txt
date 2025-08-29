@@ -3,9 +3,7 @@ v 0.9
 
 # Introduction
 
-The DCVTool (Dynamically Controlled Ventilation) is a sophisticated data integration and building automation platform designed to optimize HVAC (Heating, Ventilation, and Air Conditioning) systems in an academic environment. It operates by ingesting real-time class and event schedules from an external Student Information System (SIS) and combining this
-data with a detailed internal model of campus buildings, rooms, and their specific ventilation requirements based on ASHRAE standards. The tool then calculates the precise ventilation needed for each zone based on scheduled occupancy and dynamically generates hourly setpoints. These setpoints are written to a building automation system (like WebCtrl),
-allowing for significant energy savings by ensuring rooms are only ventilated when occupied, rather than on a fixed, 24/7 schedule. Managed through a web-based administrative interface and automated via scheduled cron jobs, the DCVTool serves as a critical bridge between academic scheduling and physical infrastructure management.
+The DCVTool (Dynamically Controlled Ventilation) is a sophisticated data integration and building automation platform designed to optimize HVAC (Heating, Ventilation, and Air Conditioning) systems in an academic environment. It operates by ingesting real-time class and event schedules from an external Student Information System (SIS) and combining this data with a detailed internal model of campus buildings, rooms, and their specific ventilation requirements based on ASHRAE standards. The tool then calculates the precise ventilation needed for each zone based on scheduled occupancy and dynamically generates hourly setpoints. These setpoints are written to a building automation system (like WebCtrl), allowing for significant energy savings by ensuring rooms are only ventilated when occupied, rather than on a fixed, 24/7 schedule. Managed through a web-based administrative interface and automated via scheduled cron jobs, the DCVTool serves as a critical bridge between academic scheduling and physical infrastructure management.
 
 
 # DCVTool Technical Data Flow Overview
