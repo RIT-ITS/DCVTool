@@ -1,0 +1,4 @@
+,,,,RIT SIS Import Template,,,,,,,,,,,,,,
+(bldg_num),(bldg_code),(room_num),(pp_search_id),(class_number_code),(coursetitle),(strm),(enrl_tot),(start_date),(end_date),(meeting_time_start),(meeting_time_end),"(monday (1=yes, 0=no))",(tuesday),(wednesday),(thursday),(friday),(saturday),(sunday)
+Building Number,Building Code,Space Number,Search Id,Class Code,Course Title,Term,Event Occupancy,Start Date,End Date,Class Start Time,Class End Time,Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday
+,,,,,,,,,,,,,,,,,,

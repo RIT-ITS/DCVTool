@@ -1,0 +1,4 @@
+,,,,Space Import Template,,,,,,,,
+(bldg_num),(facility_code),(bldg_name),(floor_id),(room_num),(room_name),(space_function),(rtype_code),(space_use_name),(room_area),(room_population),(uncert_amt),(department_bu_name),(active),(reservable)
+Building Number,Building Code,Building Name,Floor,Space Number,Space Name,Space Function,Space Type,Space Type Name,Area SF,Capacity,Uncertainty,Business Unit Name,Active,Reservable
+,,,,,,,,,,,,

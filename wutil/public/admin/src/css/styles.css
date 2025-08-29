@@ -1,0 +1,129 @@
+dialog {
+    padding: 0.75rem 1.25rem;
+    border: 1px solid transparent;
+    border-radius: 0.25rem;
+}
+
+optgroup{
+    font-style: normal;
+    padding-left: 10.5rem;
+}
+
+.hiddenCard{
+    display: none;
+}
+
+label{
+    margin-bottom:0%;
+    margin-top: .5rem;
+    font-weight: bold !important;
+}
+
+.customInput{
+    border: 1px solid #aaa;
+    background-color:#fff;
+    border-radius: .25rem;
+    padding: .375rem .75rem; 
+    margin-bottom: .3rem;
+}
+
+.checkBoxLabel{
+    vertical-align: middle;
+}
+
+.centerThis{
+    margin-top: 1.9rem;
+}
+
+.customSelect{
+    margin-top: 2rem;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.4);
+}
+  
+.modal-content {
+    background-color: white;
+    margin: 15% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 50%;
+}
+  
+.close {
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.dashboard {
+    width: 100%;
+}
+
+.tooltipText{
+    position: absolute;
+    visibility: hidden;
+    background-color: #6c757d;
+    border-radius: 0.3rem;
+    padding: 0.5rem;
+    color: white;
+    font-size: 80%;
+    right: -160px;
+    top: 20px;
+}
+
+.tooltipBox{
+    position: relative;
+}
+
+.tooltipBox:hover .tooltipText{
+    visibility: visible;
+}
+
+th.custom-group-start{
+    padding-left: 1.5em !important;
+}
+
+.custom-group{
+    background-color: #dee2e6 !important;
+}
+
+.makeRed{
+    color: red;
+}
+
+.brand-image{
+    margin-left: 0.0rem !important;
+}
+
+.hidden{
+    display: none;
+}
+
+body.sidebar-mini{
+    display: flex;
+}
+
+.wrapper{
+    min-width: 0;
+    flex: 1 1;
+}
+
+.main-footer{
+    margin-left: 0 !important;
+}
+
+.childTable{
+    table-layout: fixed;
+    width: fit-content;
+}

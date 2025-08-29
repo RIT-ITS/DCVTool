@@ -1,0 +1,4 @@
+,,Zone Import Template,,,
+(bldg_num),(ahu_name),(zone_name),(zone_code),(occ_sensor),(active),(xrefs)
+Building Number,Air Handling Unit Name,Zone Name,Zone ID,Occupancy Sensor Present,Active,Spaces Served by Zone
+,,,,,
