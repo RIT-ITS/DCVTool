@@ -154,10 +154,11 @@ A.7) You can use the SQL in the DCVDatabase.sql file to create the tables in the
 
 ## Section B - Installation of DCVTool
 B.1) Download the code.
-B.2) Rename the `/dcvtool/chart/values-example.yaml` to `values.yaml` and set all values as needed to match your infrastructure. Comments in the file will help you navigate it.
-B.3) open a terminal on your local machine.
-B.4) CD to the dcvtool directory. `cd /dcvtool`
-B.5) Using Kubie or Kubectl log into your kubernetes infrastructure and namespace.
-B.6) from the `/dcvtool` directory run:
+B.2) Download the AdminLTE-3.2.0 code from https://adminlte.io/ and put it in an `AdminLTE-3.2.0` directory within the `wutil/public/admin/` directory.
+B.3) Rename the `/dcvtool/chart/values-example.yaml` to `values.yaml` and set all values as needed to match your infrastructure. Comments in the file will help you navigate it.
+B.4) open a terminal on your local machine.
+B.5) CD to the dcvtool directory. `cd /dcvtool`
+B.6) Using Kubie or Kubectl log into your kubernetes infrastructure and namespace.
+B.7) from the `/dcvtool` directory run:
 `helm upgrade --install <your-chosen-application-name> ./chart -n <your-namespace-here>`
-B.7) If everything in Kubernetes and within the values.yaml is correctly configured, you should have DCVTool up and shortly!
+B.8) If everything in Kubernetes and within the values.yaml is correctly configured, you should have DCVTool up and shortly!
